@@ -146,3 +146,23 @@ src/serving/main.py  (FastAPI)  ──→  /predict 엔드포인트
 | `AIRFLOW__CORE__FERNET_KEY` | Airflow 암호화 키 (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`) |
 | `AWS_ACCESS_KEY_ID` | MinIO 또는 AWS 액세스 키 |
 | `AWS_SECRET_ACCESS_KEY` | MinIO 또는 AWS 시크릿 키 |
+
+## 브랜치 전략
+
+| 브랜치 | 설명 |
+|--------|------|
+| `main` | 안정 버전 (직접 push 금지) |
+| `develop` | 통합 브랜치 |
+| `feature/phase-{n}-{작업명}` | 기능 개발 |
+
+## 작업 흐름
+
+```
+feature → develop (PR) → main (PR)
+```
+
+## 현재 Phase
+
+| Phase | 상태 | 내용 |
+|-------|------|------|
+| Phase 1 | 완료 | Docker Compose 로컬 스택 (Airflow + MLflow + MinIO + PostgreSQL) |
