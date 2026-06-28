@@ -1,7 +1,10 @@
 version: "3.9"
 
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.9.1-python3.11
+  image: stockflow-airflow:2.9.1
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.airflow
   env_file: .env
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -136,7 +139,6 @@ services:
     command:
       - -c
       - |
-        pip install -r /requirements.txt --quiet
         airflow db migrate
         airflow users create \
           --username ${AIRFLOW_WWW_USER_USERNAME} \

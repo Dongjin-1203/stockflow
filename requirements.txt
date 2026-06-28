@@ -6,10 +6,10 @@ apache-airflow-providers-amazon==8.22.0
 mlflow==2.13.0
 
 # Data
-yfinance==0.2.40
+yfinance==1.4.1  # 0.2.x breaks against current Yahoo API
 pandas==2.2.2
 numpy==1.26.4
-pyarrow==16.0.0
+pyarrow==15.0.2  # <16 required by mlflow 2.13.0
 
 # Feature engineering
 scikit-learn==1.5.0
@@ -30,7 +30,7 @@ s3fs==2024.3.1
 
 # Database
 psycopg2-binary==2.9.9
-sqlalchemy==2.0.30
+sqlalchemy==1.4.53
 
 # Utils
 python-dotenv==1.0.1
