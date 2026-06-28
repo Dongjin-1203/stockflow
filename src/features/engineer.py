@@ -42,10 +42,19 @@ def add_technical_indicators(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_label(df: pd.DataFrame, horizon: int = 1) -> pd.DataFrame:
-    """Add binary target label: 1 if next-day close > today's close, else 0."""
+    """Add binary target: 1 if the close `horizon` days ahead exceeds today's.
+
+    The trailing `horizon` rows have no known future close, so they are
+    invalidated (NaN) and dropped rather than mislabeled as 0 — otherwise a
+    bogus "down" label would leak into the training set.
+    """
     df = df.copy()
-    df["target"] = (df["Close"].shift(-horizon) > df["Close"]).astype(int)
-    return df.dropna()
+    future_close = df["Close"].shift(-horizon)
+    df["target"] = (future_close > df["Close"]).astype(float)
+    df.loc[future_close.isna(), "target"] = float("nan")
+    df = df.dropna()
+    df["target"] = df["target"].astype(int)
+    return df
 
 
 def build_features(df: pd.DataFrame, horizon: int = 1) -> tuple[pd.DataFrame, pd.Series]:
