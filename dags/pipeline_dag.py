@@ -15,31 +15,78 @@ default_args = {
 }
 
 
+TICKERS = ["005930.KS", "000660.KS", "AAPL", "NVDA"]
+
+
 def fetch_data(**context):
-    """Pull latest OHLCV data and save to MinIO."""
+    """Pull latest OHLCV data and save raw Parquet to MinIO."""
     import sys
     sys.path.insert(0, "/opt/airflow")
     from src.data.fetcher import fetch_multiple
+    from src.data.storage import ensure_bucket, raw_key, write_parquet
 
-    tickers = ["005930.KS", "000660.KS", "AAPL", "NVDA"]
     execution_date = context["ds"]
-    data = fetch_multiple(tickers, start="2020-01-01", end=execution_date)
-    print(f"Fetched {len(data)} tickers")
+    ensure_bucket()
+    data = fetch_multiple(TICKERS, start="2020-01-01", end=execution_date)
+
+    saved = []
+    for ticker, df in data.items():
+        uri = write_parquet(df, raw_key(ticker, execution_date))
+        saved.append(uri)
+    print(f"Fetched {len(data)} tickers, saved {len(saved)} objects to MinIO")
+    if not saved:
+        raise ValueError(f"No data fetched for any of {TICKERS} — failing fast")
 
 
 def build_features(**context):
-    """Compute technical indicators and save feature sets."""
-    print("Feature engineering step — implement me")
+    """Read raw OHLCV, compute features + label, save to MinIO processed/."""
+    import sys
+    sys.path.insert(0, "/opt/airflow")
+    from src.data.storage import processed_key, raw_key, read_parquet, write_parquet
+    from src.features.engineer import build_features as build_feature_set
+
+    execution_date = context["ds"]
+    saved = []
+    for ticker in TICKERS:
+        try:
+            raw = read_parquet(raw_key(ticker, execution_date))
+        except Exception as exc:
+            print(f"Skipping {ticker}: raw data unavailable ({exc})")
+            continue
+        X, y = build_feature_set(raw)
+        processed = X.copy()
+        processed["target"] = y
+        uri = write_parquet(processed, processed_key(ticker, execution_date))
+        saved.append(uri)
+    print(f"Built features for {len(saved)} tickers, saved to MinIO")
 
 
 def train_model(**context):
-    """Train LightGBM model and log to MLflow."""
-    print("Training step — implement me")
+    """Train LightGBM on processed data, log + register to MLflow."""
+    import sys
+    sys.path.insert(0, "/opt/airflow")
+    from src.models.train import train_from_storage
+
+    execution_date = context["ds"]
+    result = train_from_storage(TICKERS, execution_date)
+    print(f"Trained run={result.run_id} version={result.model_version} metrics={result.metrics}")
+    context["ti"].xcom_push(key="run_id", value=result.run_id)
+    context["ti"].xcom_push(key="model_version", value=result.model_version)
 
 
 def evaluate_model(**context):
-    """Compare new model against production model in MLflow."""
-    print("Evaluation step — implement me")
+    """Compare the new model against Production and promote if better."""
+    import sys
+    sys.path.insert(0, "/opt/airflow")
+    from src.models.evaluate import evaluate_and_promote
+
+    version = context["ti"].xcom_pull(task_ids="train_model", key="model_version")
+    if not version:
+        print("No model_version from train_model — skipping promotion")
+        return
+
+    result = evaluate_and_promote(version)
+    print(f"Promotion: promoted={result.promoted} version={result.version} reason={result.reason}")
 
 
 with DAG(
