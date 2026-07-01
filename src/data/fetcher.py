@@ -32,6 +32,10 @@ def fetch_ohlcv(
     df = yf.download(ticker, start=str(start), end=str(end), interval=interval, progress=False)
     if df.empty:
         raise ValueError(f"No data returned for ticker '{ticker}'")
+    # yfinance >=0.2.50 returns MultiIndex columns (price, ticker) even for a
+    # single ticker — flatten to the price level so downstream code sees Series.
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
     df.index.name = "date"
     return df[["Open", "High", "Low", "Close", "Volume"]]
 

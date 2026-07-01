@@ -2,16 +2,24 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt .
+# libgomp1: OpenMP runtime required by the LightGBM native lib used to load the model.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Serving deps. Versions pinned to match training (requirements.txt) so the
+# MLflow-logged LightGBM model loads without dependency mismatches.
 RUN pip install --no-cache-dir \
-    fastapi \
-    uvicorn[standard] \
-    pydantic \
-    mlflow \
-    boto3 \
-    pandas \
-    python-dotenv
+    fastapi==0.111.0 \
+    uvicorn[standard]==0.30.0 \
+    pydantic==2.7.1 \
+    mlflow==2.13.0 \
+    lightgbm==4.3.0 \
+    boto3==1.34.100 \
+    pandas==2.2.2 \
+    pyarrow==15.0.2 \
+    python-dotenv==1.0.1
 
 # Copy source
 COPY src/ ./src/

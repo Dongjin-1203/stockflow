@@ -146,3 +146,41 @@ src/serving/main.py  (FastAPI)  ──→  /predict 엔드포인트
 | `AIRFLOW__CORE__FERNET_KEY` | Airflow 암호화 키 (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`) |
 | `AWS_ACCESS_KEY_ID` | MinIO 또는 AWS 액세스 키 |
 | `AWS_SECRET_ACCESS_KEY` | MinIO 또는 AWS 시크릿 키 |
+
+## 브랜치 전략
+
+| 브랜치 | 설명 |
+|--------|------|
+| `main` | 안정 버전 (직접 push 금지) |
+| `develop` | 통합 브랜치 |
+| `feature/phase-{n}-{작업명}` | 기능 개발 |
+
+## 작업 흐름
+
+```
+feature → develop (PR) → main (PR)
+```
+
+## 현재 Phase
+
+| Phase | 상태 | 내용 |
+|-------|------|------|
+| Phase 1 | 완료 | Docker Compose 로컬 스택 (Airflow + MLflow + MinIO + PostgreSQL) |
+
+## PR 흐름 기준
+
+### 브랜치 merge 규칙
+- feature/* → develop : Phase 단위 완료 시
+- develop → main : 마일스톤 단위 완료 시 (직접 push 금지)
+
+### feature → develop PR 조건
+- 해당 Phase 목표 기능 정상 동작 확인
+- DAG 수동 트리거 성공 확인
+
+### develop → main PR 조건
+- Phase 1~4 완료 (로컬 전체 파이프라인 end-to-end 동작)
+- 또는 Phase 5 완료 (AWS 배포 완료)
+
+### 현재 상태
+- feature/phase-1-docker-setup: 작업 완료, develop PR 대기 중
+- develop → main: 미개방 (Phase 4 이후 예정)

@@ -1,0 +1,16 @@
+# Airflow image with StockFlow ML dependencies baked in.
+# Used by airflow-init / webserver / scheduler so DAG tasks can import
+# src/ modules (yfinance, lightgbm, mlflow, ...) without runtime pip installs.
+FROM apache/airflow:2.9.1-python3.11
+
+# Python deps first so this expensive layer stays cached across edits below.
+COPY requirements.txt /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
+
+# libgomp1: OpenMP runtime required by LightGBM/XGBoost native libs.
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+USER airflow
