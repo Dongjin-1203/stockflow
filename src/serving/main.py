@@ -75,6 +75,12 @@ def health() -> dict[str, Any]:
     return {"status": "ok", "model_loaded": _model is not None}
 
 
+def _prob_up(input_df: pd.DataFrame) -> float:
+    """Run the loaded model on a single-row feature frame → P(up)."""
+    proba = _model.predict(input_df)
+    return float(proba[0]) if proba.ndim == 1 else float(proba[0][1])
+
+
 @app.post("/predict", response_model=PredictResponse)
 def predict(req: PredictRequest) -> PredictResponse:
     if _model is None:
@@ -82,13 +88,54 @@ def predict(req: PredictRequest) -> PredictResponse:
 
     input_df = pd.DataFrame([req.features])
     try:
-        proba = _model.predict(input_df)
+        prob_up = _prob_up(input_df)
     except Exception as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    prob_up = float(proba[0]) if proba.ndim == 1 else float(proba[0][1])
     return PredictResponse(
         ticker=req.ticker,
+        prediction=int(prob_up >= 0.5),
+        probability_up=round(prob_up, 4),
+    )
+
+
+@app.get("/predict/ticker/{ticker}", response_model=PredictResponse)
+def predict_ticker(ticker: str) -> PredictResponse:
+    """Predict next-day direction for a ticker end-to-end.
+
+    Fetches recent OHLCV, computes the same technical features used in
+    training, and runs the model on the most recent (fully-formed) row —
+    so callers only need a ticker, not a feature vector.
+    """
+    if _model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded.")
+
+    from datetime import date, timedelta
+
+    from src.data.fetcher import fetch_ohlcv
+    from src.features.engineer import add_technical_indicators
+
+    end = date.today()
+    start = end - timedelta(days=200)  # enough history for ema_30/bbands/etc.
+    try:
+        ohlcv = fetch_ohlcv(ticker, start=start, end=end)
+    except Exception as exc:
+        raise HTTPException(status_code=404, detail=f"No data for '{ticker}': {exc}") from exc
+
+    feats = add_technical_indicators(ohlcv)
+    drop_cols = ["Open", "High", "Low", "Close", "Volume"]
+    X = feats.drop(columns=drop_cols).dropna()
+    if X.empty:
+        raise HTTPException(status_code=422, detail=f"Insufficient data to build features for '{ticker}'")
+
+    latest = X.iloc[[-1]]  # most recent fully-formed feature row
+    try:
+        prob_up = _prob_up(latest)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return PredictResponse(
+        ticker=ticker,
         prediction=int(prob_up >= 0.5),
         probability_up=round(prob_up, 4),
     )
