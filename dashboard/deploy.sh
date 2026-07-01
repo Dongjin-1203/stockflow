@@ -19,7 +19,7 @@ gcloud run deploy $SERVICE \
   --region $REGION \
   --allow-unauthenticated \
   --memory 512Mi \
-  --set-env-vars ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY,ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-opus-4-8},DART_API_KEY=$DART_API_KEY,ECOS_API_KEY=$ECOS_API_KEY
+  --set-env-vars OPENAI_API_KEY=$OPENAI_API_KEY,OPENAI_MODEL=${OPENAI_MODEL:-gpt-5-mini},DART_API_KEY=$DART_API_KEY,ECOS_API_KEY=$ECOS_API_KEY
 
 URL=$(gcloud run services describe $SERVICE --region $REGION --format='value(status.url)')
 echo "✅ 배포 완료!"

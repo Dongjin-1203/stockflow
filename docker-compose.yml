@@ -218,7 +218,7 @@ services:
     environment:
       # AI 브리핑이 호출할 StockFlow 예측 API (compose 내부 주소)
       STOCKFLOW_API_URL: http://api:8000
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-opus-4-8}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
     ports:
       - "8501:8080"   # Streamlit UI
     volumes:

@@ -42,7 +42,7 @@ if auto_refresh:
 
 st.sidebar.markdown("---")
 st.sidebar.caption("데이터: FDR · DART · ECOS · Alternative.me")
-st.sidebar.caption(f"브리핑: {os.getenv('ANTHROPIC_MODEL', 'claude-opus-4-8')}")
+st.sidebar.caption(f"브리핑: {os.getenv('OPENAI_MODEL', 'gpt-5-mini')}")
 
 # ── 본문 ─────────────────────────────────────────
 st.title("📊 금융 시장 인텔리전스 대시보드")

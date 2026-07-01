@@ -16,7 +16,7 @@ streamlit run app.py
 
 * 탭 1: 시장 현황 (코스피/코스닥/환율/공탐지수/거시지표)
 * 탭 2: 공시 탐색 (DART OpenAPI)
-* 탭 3: AI 브리핑 (Claude · StockFlow 예측 연동)
+* 탭 3: AI 브리핑 (OpenAI · StockFlow 예측 연동)
 * 탭 4: 알림 조건
 
 ## 배포

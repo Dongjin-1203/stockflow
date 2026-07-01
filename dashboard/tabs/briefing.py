@@ -1,4 +1,4 @@
-"""탭 3 — AI 브리핑 (Claude).
+"""탭 3 — AI 브리핑 (OpenAI).
 
 시장 전체 브리핑 + 관심 종목 공시 요약을 생성한다.
 API 키가 없으면 llm_client가 에러 메시지 문자열을 반환하며, 그대로 표시한다(graceful).
@@ -96,8 +96,8 @@ def _render_market_briefing() -> None:
     """[구역 1] 시장 전체 브리핑."""
     st.subheader("📋 오늘의 시장 브리핑")
 
-    # 세션 최초 진입 시 자동 1회 생성 (Claude 키가 있을 때만; 키 없으면 안내문 유지)
-    if "market_briefing" not in st.session_state and os.getenv("ANTHROPIC_API_KEY"):
+    # 세션 최초 진입 시 자동 1회 생성 (OpenAI 키가 있을 때만; 키 없으면 안내문 유지)
+    if "market_briefing" not in st.session_state and os.getenv("OPENAI_API_KEY"):
         _run_briefing()
 
     if st.button("브리핑 생성", type="primary"):
